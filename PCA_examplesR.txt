@@ -1,0 +1,113 @@
+#############################################################
+######################                                      #           
+# R example code for principal components analysis:         #
+######################                                      #
+#############################################################
+
+#####################################:
+
+# The built-in R data set called state contains a multivariate data matrix.
+# For information, type:
+
+help(state)
+
+# To see the data matrix (containing variables for the 50 states, as of 1977):
+
+state.x77
+
+# Creating a data frame out of a matrix:
+
+state.x77.df <- data.frame(state.x77)
+
+names(state.x77.df) <- c("Popul", "Income", "Illit", "LifeExp", "Murder", "HSGrad", "Frost", "Area")
+
+attach(state.x77.df)
+
+############################################
+
+# Principal Components Analysis of the State data:
+
+state.pc <- princomp(state.x77.df, cor=T)
+
+# Showing the coefficients of the components:
+
+summary(state.pc,loadings=T)
+
+# Showing the eigenvalues of the correlation matrix:
+
+(state.pc$sdev)^2
+
+# A scree plot:
+
+plot(1:(length(state.pc$sdev)),  (state.pc$sdev)^2, type='b', 
+     main="Scree Plot", xlab="Number of Components", ylab="Eigenvalue Size")
+
+# Where does the "elbow" occur?
+# What seems to be a reasonable number of PCs to use?
+
+# Plotting the PC scores for the sample data in the space of the first two principal components:
+
+par(pty="s")
+plot(state.pc$scores[,1], state.pc$scores[,2], ylim=range(state.pc$scores[,1]), 
+     xlab="PC 1", ylab="PC 2", type ='n', lwd=2)
+# labeling points with state abbreviations:
+text(state.pc$scores[,1], state.pc$scores[,2], labels=state.abb, cex=0.7, lwd=2)
+
+
+# We see the Southeastern states grouped in the bottom left 
+# and several New England states together in the bottom right.
+
+# The same plot, but without restricting the y axis limits:
+
+par(pty="s")
+plot(state.pc$scores[,1], state.pc$scores[,2], 
+     xlab="PC 1", ylab="PC 2", type ='n', lwd=2)
+# labeling points with state abbreviations:
+text(state.pc$scores[,1], state.pc$scores[,2], labels=state.abb, cex=0.7, lwd=2)
+
+# The biplot can add information about the variables to the plot of the first two PC scores:
+
+biplot(state.pc,xlabs=state.abb)
+
+# Note the Area vector (arrow) goes almost totally in the direction of the second PC.
+
+
+############################################
+############################################
+
+# Inference about Principal Components:
+
+# CIs for eigenvalue(s) of Sigma:
+
+# (Note these eigenvalues will be different from the eigenvalues in the PCA done above,
+# which was based on the *correlation* matrix R, not on S.)
+
+# Copy this function into R first:
+
+evalue.CI <- function(datamatrix, labelvec, m=length(labelvec), conf.level=0.95){
+alpha<- 1-conf.level
+n<-nrow(datamatrix)
+z<-qnorm(alpha/(2*m),lower=F)
+lambdas<- princomp(datamatrix)$sdev^2
+print(lambdas)
+LCL<-lambdas[labelvec]/(1+z*sqrt(2/n))
+UCL<-lambdas[labelvec]/(1-z*sqrt(2/n))
+CIs<-cbind(LCL,UCL)
+return(CIs)
+}
+
+
+# 95% CI for variance of the first population PC:
+
+evalue.CI(state.x77,1)
+
+# Joint 95% CIs for variances of the first two population PCs:
+
+evalue.CI(state.x77,c(1,2))
+
+# Note the first interval is wider because the FAMILYWISE confidence coefficient is 95% here.
+
+# 99% CI for variance of the first population PC:
+
+evalue.CI(state.x77,1, conf.level=0.99)
+
